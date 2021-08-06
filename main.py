@@ -3,10 +3,12 @@ from aqt import mw
 from aqt.utils import tooltip as qttooltip
 from aqt.qt import *
 from aqt import dialogs as aqt_dialogs
+from ._classes import *
+
 
 from .utils import has_internet_connection
 
-production = True
+production = False
 
 # production parameters
 COUNTDOWN_TO_SYNC_TIMER_TIMEOUT = 0.5 * 1000 * 60

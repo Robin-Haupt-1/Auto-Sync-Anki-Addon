@@ -1,3 +1,12 @@
+from aqt import *
+
+from aqt.qt import *
+from aqt.about import ClosableQDialog
+from aqt.addons import AddonsDialog
+from aqt.browser import Browser
+from aqt.stats import NewDeckStats
+from aqt.progress import ProgressDialog
+from aqt.addcards import AddCards
 
 
 class CloseEventListener(QDialog):
@@ -61,7 +70,8 @@ class OpenWindowMonitor:
 
     def has_open_windows(self):
         self.check_children()
-        return len(self.children) > 0
+        if len(self.children) > 0:
+            return self.children
 
 
 class UserActivityEventListener(QDialog):
