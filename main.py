@@ -6,7 +6,7 @@ from aqt import dialogs as aqt_dialogs
 
 from .utils import has_internet_connection
 
-production = False
+production = True
 
 # production parameters
 COUNTDOWN_TO_SYNC_TIMER_TIMEOUT = 0.5 * 1000 * 60
@@ -31,7 +31,7 @@ class UserActivityEventListener(QDialog):
 
     def eventFilter(self, obj: QObject, evt: QEvent):
         event_id = evt.type()
-        if event_id in [2, 6, 5]:
+        if event_id in [2, 5, 6]:  # 2: 'MouseButtonPress', 5: 'MouseMove',  6: 'KeyPress'
             self.sync_routine.on_user_activity()
         return False
 
