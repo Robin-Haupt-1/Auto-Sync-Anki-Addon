@@ -1,18 +1,22 @@
 from aqt.qt import *
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 from aqt.utils import showInfo
 from aqt import QCoreApplication
 from .sync_routine import SyncRoutine
 from .config import AutoSyncConfigManager
 from .constants import *
 from aqt import mw
+from .log_window import AutoSyncLogDialog, LogManager
+from .constants import AUTO_SYNC_ICON
 
 
 class AutoSyncOptionsDialog(QDialog):
-    def __init__(self, config: AutoSyncConfigManager, sync_routine: SyncRoutine):
+    def __init__(self, config: AutoSyncConfigManager, sync_routine: SyncRoutine, log_manager: LogManager):
         super(AutoSyncOptionsDialog, self).__init__()
         self.config = config
         self.sync_routine: SyncRoutine = sync_routine
+        self.log_manager = log_manager
+        self.log_dialog_instance = None
 
         # set up UI elements
         self.sync_timeout_spinbox = QSpinBox()
@@ -37,17 +41,14 @@ class AutoSyncOptionsDialog(QDialog):
         self.config.set(CONFIG_IDLE_SYNC_TIMEOUT, f)
         self.sync_routine.reload_config()
 
-
     def setup_ui(self):
-        style = QApplication.instance().style()
-
-        icon = style.standardIcon(QStyle.SP_BrowserReload)
-        self.setWindowIcon(icon)
-
+        self.setWindowIcon(AUTO_SYNC_ICON)
+        self.setMaximumWidth(500)
+        self.setMaximumHeight(150)
         # "Sync after" option
 
         sync_timeout_label = QLabel('Sync after')
-        sync_timeout_label.setToolTip('The program will wait this many minutes after you have last interacted with Anki to start the sync')
+        sync_timeout_label.setToolTip('How many minutes after you have last interacted with Anki the program will wait to start the sync')
         self.sync_timeout_spinbox.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
         self.sync_timeout_spinbox.setFixedWidth(80)
         self.sync_timeout_spinbox.setMinimum(1)
@@ -75,6 +76,22 @@ class AutoSyncOptionsDialog(QDialog):
         self.idle_sync_timeout_spinbox.setToolTip('While you are not using Anki, the program will keep syncing in the background (in case you are using Anki on mobile or web and there are changes to sync)')
         self.idle_sync_timeout_spinbox.valueChanged.connect(self.change_idle_sync_timeout)
 
+        # Show log button
+        open_log_button = QPushButton()
+
+        open_log_button.setText("Show log ...")
+        open_log_button.clicked.connect(lambda *args: self.on_log_dialog_call(self.log_manager))
+        open_log_button.setMaximumWidth(80)
+
+        # Close button
+
+        close_button = QPushButton()
+        close_button.setText("Close")
+        close_button.clicked.connect(lambda *args: self.close())
+
+        empty_label = QLabel()
+        empty_label.setText("")
+
         grid = QGridLayout()
         grid.setSpacing(10)
         grid.addWidget(sync_timeout_label, 0, 0)
@@ -82,12 +99,34 @@ class AutoSyncOptionsDialog(QDialog):
 
         grid.addWidget(idle_sync_timeout_label, 1, 0)
         grid.addWidget(self.idle_sync_timeout_spinbox, 1, 1)
+        grid.addWidget(empty_label, 3, 0)
+
+        grid.addWidget(open_log_button, 4, 0)
+        grid.addWidget(close_button, 4, 1)
+
         self.setLayout(grid)
 
         self.setWindowTitle('Auto Sync Options')
 
+    def on_log_dialog_call(self, log_manager):
+        if (self.log_dialog_instance):
+            self.log_dialog_instance.raise_()
+            return
+        dialog = AutoSyncLogDialog(self.log_manager, self)
+        self.log_dialog_instance = dialog
+        dialog.show()
+        dialog.exec_()
 
-def onOptionsCall(conf, sync_routine):
+    def on_log_dialog_close(self):
+        self.log_dialog_instance = None
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        if self.log_dialog_instance:
+            self.log_dialog_instance.close()
+
+
+def on_options_call(conf, sync_routine, log_manager):
     """Call settings dialog"""
-    dialog = AutoSyncOptionsDialog(conf, sync_routine)
+    dialog = AutoSyncOptionsDialog(conf, sync_routine, log_manager)
+    dialog.show()
     dialog.exec_()

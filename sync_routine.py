@@ -9,16 +9,12 @@ from .config import AutoSyncConfigManager
 from .utils import has_internet_connection
 import datetime
 from .constants import *
+from .log_window import LogManager
 
-production = True
+production = False
 
 
 # production parameters
-
-def _log(message):
-    if not production:
-        qttooltip(message)
-    print(f"[Auto Sync] {datetime.datetime.now().strftime('%H-%M-%S')}: {message}")
 
 
 class UserActivityEventListener(QDialog):
@@ -34,24 +30,30 @@ class UserActivityEventListener(QDialog):
 
 
 class SyncRoutine:
-    def __init__(self, config: AutoSyncConfigManager):
+    def __init__(self, config: AutoSyncConfigManager, log_manager: LogManager):
         self.config = config
+        self.log_manager = log_manager
         self.countdown_to_sync_timer = None
         self.sync_timer = None
         self.sync_in_progress = False
         self.activity_since_sync = True
-        self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT = 0.5 * 1000 * 60
+        self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT = 0.1 * 1000 * 60
         self.SYNC_TIMEOUT_NO_ACTIVITY = (self.config.get("idle sync timeout") * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
         self.SYNC_TIMEOUT = (self.config.get("sync timeout") * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
 
         self.user_activity_event_listener = UserActivityEventListener(self)
         self.start_countdown_to_sync_timer()
 
+    def _log(self, message):
+        if not production:
+            print(f"[Auto Sync] {datetime.datetime.now().strftime('%H-%M-%S')}: {message}")
+        self.log_manager.write(f"[{datetime.datetime.now().strftime('%H-%M-%S')}]: {message}")
+
     def start_countdown_to_sync_timer(self):
         """After a few seconds, start the timer and install the event listener"""
         if self.countdown_to_sync_timer is not None:
             self.countdown_to_sync_timer.stop()
-        _log(f"waiting {self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 60000} minutes to start sync timer")
+        self._log(f"Waiting {self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 60000} minutes to start sync timer")
         self.countdown_to_sync_timer = mw.progress.timer(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT, self.start_sync_timer, False)
 
     def is_bad_state(self):
@@ -60,14 +62,18 @@ class SyncRoutine:
         if self.sync_in_progress:
             reasons.append("Sync in progress")
         if not aqt_dialogs.allClosed():
-            reasons.append("Windows open")
+            try:
+                open_windows = [x[0] for x in aqt_dialogs._dialogs.items() if x[1][1]]
+                reasons.append(f"Windows are open: {', '.join(open_windows)}")
+            except:
+                reasons.append(f"Windows are open")
         if mw.web.hasFocus() or mw.toolbarWeb.hasFocus() or mw.bottomWeb.hasFocus():
             reasons.append("Main Window has focus")
-        if mw.state != "deckBrowser":
-            reasons.append("Main Window in bad state (" + mw.state + ")")
+        if mw.state not in ["deckBrowser", "overview"]:
+            reasons.append("Main Window is not on deck overview screen (state: " + mw.state + ")")
 
         if len(reasons) > 0:
-            _log(f"Cant start sync timer (Reasons:  {', '.join(reasons)})")
+            self._log(f"Can't start sync timer ({', '.join(reasons)})")
             return True
 
     def start_sync_timer(self):
@@ -75,7 +81,7 @@ class SyncRoutine:
         if self.is_bad_state():
             self.start_countdown_to_sync_timer()
         else:
-            _log(f"installed event listener, listening for {(self.SYNC_TIMEOUT if self.activity_since_sync else self.SYNC_TIMEOUT_NO_ACTIVITY) / 60000} minutes")
+            self._log(f"Started sync timer, waiting for {(self.SYNC_TIMEOUT if self.activity_since_sync else self.SYNC_TIMEOUT_NO_ACTIVITY) / 60000} minutes")
             mw.app.installEventFilter(self.user_activity_event_listener)
             if self.sync_timer is not None:
                 self.sync_timer.stop()
@@ -83,31 +89,32 @@ class SyncRoutine:
 
     def stop_sync_timer(self):
         """Stop the background timer to automatically sync the collection and remove the event filter that checks for user activity"""
-        _log("removed event listener")
+
         mw.app.removeEventFilter(self.user_activity_event_listener)
         if self.sync_timer is not None:
             self.sync_timer.stop()
         self.start_countdown_to_sync_timer()
 
     def on_user_activity(self):
+        self._log("User activity! Stopping sync timer")
         self.activity_since_sync = True
         self.stop_sync_timer()
 
     def do_sync(self):
         """Force the app to sync the collection if there's an internet connection"""
         if not has_internet_connection():
-            _log("delaying sync, no internet connection")
+            self._log(f"No internet connection, delaying sync for {self.SYNC_TIMEOUT / 60000} minutes")
             self.activity_since_sync = True  # shorten duration to next sync
             self.start_sync_timer()
             return
         mw.app.removeEventFilter(self.user_activity_event_listener)
-        _log("Syncing")
+        self._log("Syncing")
         self.sync_in_progress = True
         mw.onSync()
 
     def sync_finished(self, *args):
         """When one sync cycle has finished, start the whole process over"""
-        _log("sync finished")
+        self._log("Sync completed")
         self.sync_in_progress = False
         self.activity_since_sync = False
         self.start_countdown_to_sync_timer()
@@ -115,7 +122,7 @@ class SyncRoutine:
     def load_config(self):
         self.SYNC_TIMEOUT_NO_ACTIVITY = (self.config.get("idle sync timeout") * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
         self.SYNC_TIMEOUT = (self.config.get("sync timeout") * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
-        _log(f"loaded config. New sync timeout: {self.SYNC_TIMEOUT/60000} minutes, idle sync timeout: {self.SYNC_TIMEOUT_NO_ACTIVITY/60000} minutes")
+        self._log(f"Loaded config. New sync / idle sync timeout: {self.SYNC_TIMEOUT / 60000} minutes, {self.SYNC_TIMEOUT_NO_ACTIVITY / 60000} minutes")
 
     def reload_config(self):
         self.stop_sync_timer()
