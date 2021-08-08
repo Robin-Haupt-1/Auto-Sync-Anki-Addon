@@ -121,6 +121,12 @@ class SyncRoutine:
         self.activity_since_sync = False
         self.start_countdown_to_sync_timer()
 
+    def sync_initiated(self, *args):
+        """Corner case: user initiates sync but it can't finish. Set this parameter to avoid starting another failed sync attempt on top"""
+        if not production:
+            self._log("Sync initiated")
+        self.sync_in_progress = True
+
     def load_config(self):
         self.SYNC_TIMEOUT_NO_ACTIVITY = (self.config.get(CONFIG_IDLE_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
         self.SYNC_TIMEOUT = (self.config.get(CONFIG_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
