@@ -38,8 +38,9 @@ class SyncRoutine:
         self.sync_in_progress = False
         self.activity_since_sync = True
         self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT = 0.1 * 1000 * 60
-        self.SYNC_TIMEOUT_NO_ACTIVITY = (self.config.get("idle sync timeout") * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
-        self.SYNC_TIMEOUT = (self.config.get("sync timeout") * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
+        self.SYNC_TIMEOUT_NO_ACTIVITY = (self.config.get(CONFIG_IDLE_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
+        self.SYNC_TIMEOUT = (self.config.get(CONFIG_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
+        self.STRICT_BACKGROUND_MODE = self.config.get(CONFIG_STRICT_BACKGROUND_MODE)
 
         self.user_activity_event_listener = UserActivityEventListener(self)
         self.start_countdown_to_sync_timer()
@@ -61,16 +62,17 @@ class SyncRoutine:
         reasons = []
         if self.sync_in_progress:
             reasons.append("Sync in progress")
-        if not aqt_dialogs.allClosed():
-            try:
-                open_windows = [x[0] for x in aqt_dialogs._dialogs.items() if x[1][1]]
-                reasons.append(f"Windows are open: {', '.join(open_windows)}")
-            except:
-                reasons.append(f"Windows are open")
-        if mw.web.hasFocus() or mw.toolbarWeb.hasFocus() or mw.bottomWeb.hasFocus():
-            reasons.append("Main Window has focus")
-        if mw.state not in ["deckBrowser", "overview"]:
-            reasons.append("Main Window is not on deck overview screen (state: " + mw.state + ")")
+        if self.STRICT_BACKGROUND_MODE:
+            if not aqt_dialogs.allClosed():
+                try:
+                    open_windows = [x[0] for x in aqt_dialogs._dialogs.items() if x[1][1]]
+                    reasons.append(f"Windows are open: {', '.join(open_windows)}")
+                except:
+                    reasons.append(f"Windows are open")
+            if mw.web.hasFocus() or mw.toolbarWeb.hasFocus() or mw.bottomWeb.hasFocus():
+                reasons.append("Main Window has focus")
+            if mw.state not in ["deckBrowser", "overview"]:
+                reasons.append("Main Window is not on deck browser or overview screen (state: " + mw.state + ")")
 
         if len(reasons) > 0:
             self._log(f"Can't start sync timer ({', '.join(reasons)})")
@@ -120,9 +122,11 @@ class SyncRoutine:
         self.start_countdown_to_sync_timer()
 
     def load_config(self):
-        self.SYNC_TIMEOUT_NO_ACTIVITY = (self.config.get("idle sync timeout") * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
-        self.SYNC_TIMEOUT = (self.config.get("sync timeout") * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
-        self._log(f"Loaded config. New sync / idle sync timeout: {self.SYNC_TIMEOUT / 60000} minutes, {self.SYNC_TIMEOUT_NO_ACTIVITY / 60000} minutes")
+        self.SYNC_TIMEOUT_NO_ACTIVITY = (self.config.get(CONFIG_IDLE_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
+        self.SYNC_TIMEOUT = (self.config.get(CONFIG_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
+        self.STRICT_BACKGROUND_MODE = (self.config.get(CONFIG_STRICT_BACKGROUND_MODE))
+
+        self._log(f"Loaded config. New sync / idle sync timeout: {self.SYNC_TIMEOUT / 60000} minutes, {self.SYNC_TIMEOUT_NO_ACTIVITY / 60000} minutes. Strict background mode {'enabled' if self.STRICT_BACKGROUND_MODE else 'disabled'}")
 
     def reload_config(self):
         self.stop_sync_timer()

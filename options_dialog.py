@@ -41,6 +41,15 @@ class AutoSyncOptionsDialog(QDialog):
         self.config.set(CONFIG_IDLE_SYNC_TIMEOUT, f)
         self.sync_routine.reload_config()
 
+    def change_strict_background_mode(self, enabled):
+
+        self.config.set(CONFIG_STRICT_BACKGROUND_MODE, enabled)
+        self.sync_routine.reload_config()
+
+    def change_strict_background_mode_label_click(self, enabled):
+        self.config.set(CONFIG_STRICT_BACKGROUND_MODE, enabled)
+        self.sync_routine.reload_config()
+
     def setup_ui(self):
         self.setWindowIcon(AUTO_SYNC_ICON)
         self.setMaximumWidth(500)
@@ -58,7 +67,7 @@ class AutoSyncOptionsDialog(QDialog):
             self.sync_timeout_spinbox.setSuffix(" minute")
         else:
             self.sync_timeout_spinbox.setSuffix(" minutes")
-        self.sync_timeout_spinbox.setToolTip('The program will wait this many minutes after you have last interacted with Anki to start the sync')
+        self.sync_timeout_spinbox.setToolTip('How many minutes after you have last interacted with Anki the program will wait to start the sync')
         self.sync_timeout_spinbox.valueChanged.connect(self.change_sync_timeout)
 
         # "Idle Sync after" option
@@ -75,6 +84,16 @@ class AutoSyncOptionsDialog(QDialog):
             self.idle_sync_timeout_spinbox.setSuffix(" minutes")
         self.idle_sync_timeout_spinbox.setToolTip('While you are not using Anki, the program will keep syncing in the background (in case you are using Anki on mobile or web and there are changes to sync)')
         self.idle_sync_timeout_spinbox.valueChanged.connect(self.change_idle_sync_timeout)
+
+        # Strict background mode" checkbox
+
+        strict_background_mode_label = QLabel("Strictly avoid interruptions (recommended)")
+        strict_background_mode_label.setToolTip("Will not auto sync if cards are being reviewed, the card browser or similar windows are open <br>or the main window has focus (isn't minimized or in the background)")
+        strict_background_mode_checkbox = QCheckBox()
+        strict_background_mode_checkbox.setToolTip("Will not auto sync if cards are being reviewed, the card browser or similar windows are open <br>or the main window has focus (isn't minimized or in the background)")
+        strict_background_mode_checkbox.setChecked(self.config.get(CONFIG_STRICT_BACKGROUND_MODE))
+        strict_background_mode_checkbox.stateChanged.connect(self.change_strict_background_mode)
+        strict_background_mode_label.mouseReleaseEvent = lambda *args: strict_background_mode_checkbox.toggle()
 
         # Show log button
         open_log_button = QPushButton()
@@ -99,10 +118,13 @@ class AutoSyncOptionsDialog(QDialog):
 
         grid.addWidget(idle_sync_timeout_label, 1, 0)
         grid.addWidget(self.idle_sync_timeout_spinbox, 1, 1)
-        grid.addWidget(empty_label, 3, 0)
+        grid.addWidget(strict_background_mode_label, 3, 0)
+        grid.addWidget(strict_background_mode_checkbox, 3, 1)
 
-        grid.addWidget(open_log_button, 4, 0)
-        grid.addWidget(close_button, 4, 1)
+        # grid.addWidget(empty_label, 4, 0)
+
+        grid.addWidget(open_log_button, 5, 0)
+        grid.addWidget(close_button, 5, 1)
 
         self.setLayout(grid)
 

@@ -43,7 +43,7 @@ class AutoSyncLogDialog(QDialog):
         self.setLayout(grid)
 
         self.setWindowTitle('Auto Sync Log')
-        self.setMinimumWidth(600)
+        self.setMinimumWidth(750)
         self.refresh_log()
         sb = self.log_output.verticalScrollBar()
         sb.setValue(sb.maximum())
