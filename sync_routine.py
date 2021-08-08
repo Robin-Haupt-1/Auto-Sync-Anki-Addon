@@ -39,9 +39,9 @@ class SyncRoutine:
         self.start_countdown_to_sync_timer()
 
     def _log(self, message):
-        self.log_manager.write(f"[{datetime.datetime.now().strftime('%H-%M-%S')}]: {message}")
+        self.log_manager.write(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] {message}")
         if log_to_stdout:
-            print(f"[Auto Sync] {datetime.datetime.now().strftime('%H-%M-%S')}: {message}")
+            print(f"[Auto Sync] {datetime.datetime.now().strftime('%H:%M:%S')} {message}")
 
     def start_countdown_to_sync_timer(self):
         """After a few seconds, start the timer and install the event listener"""
@@ -128,6 +128,5 @@ class SyncRoutine:
         self._log(f"Loaded config. New sync / idle sync timeout: {self.SYNC_TIMEOUT / 60000} minutes, {self.SYNC_TIMEOUT_NO_ACTIVITY / 60000} minutes. Strictly avoid interruptions: {'on' if self.STRICTLY_AVOID_INTERRUPTIONS else 'off'}")
 
     def reload_config(self):
-        self.stop_sync_timer()
         self.load_config()
-        self.start_countdown_to_sync_timer()
+        self.stop_sync_timer()
