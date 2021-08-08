@@ -1,20 +1,13 @@
+import datetime
 from aqt import dialogs as aqt_dialogs
-from aqt import gui_hooks
 from aqt import mw
-from aqt.qt import *
-from aqt.utils import showInfo
-from aqt.utils import tooltip as qttooltip
-
+from aqt.qt import QDialog, QObject, QEvent
 from .config import AutoSyncConfigManager
 from .utils import has_internet_connection
-import datetime
 from .constants import *
 from .log_window import LogManager
 
-production = False
-
-
-# production parameters
+log_to_stdout = False
 
 
 class UserActivityEventListener(QDialog):
@@ -37,18 +30,18 @@ class SyncRoutine:
         self.sync_timer = None
         self.sync_in_progress = False
         self.activity_since_sync = True
-        self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT = 0.1 * 1000 * 60
+        self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT = 0.2 * 1000 * 60  # Reinstall the event listener every 0.2 minutes. If it were running all the time, it would impact performance
         self.SYNC_TIMEOUT_NO_ACTIVITY = (self.config.get(CONFIG_IDLE_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
         self.SYNC_TIMEOUT = (self.config.get(CONFIG_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
-        self.STRICT_BACKGROUND_MODE = self.config.get(CONFIG_STRICT_BACKGROUND_MODE)
+        self.STRICTLY_AVOID_INTERRUPTIONS = self.config.get(CONFIG_STRICTLY_AVOID_INTERRUPTIONS)
 
         self.user_activity_event_listener = UserActivityEventListener(self)
         self.start_countdown_to_sync_timer()
 
     def _log(self, message):
-        if not production:
-            print(f"[Auto Sync] {datetime.datetime.now().strftime('%H-%M-%S')}: {message}")
         self.log_manager.write(f"[{datetime.datetime.now().strftime('%H-%M-%S')}]: {message}")
+        if log_to_stdout:
+            print(f"[Auto Sync] {datetime.datetime.now().strftime('%H-%M-%S')}: {message}")
 
     def start_countdown_to_sync_timer(self):
         """After a few seconds, start the timer and install the event listener"""
@@ -58,11 +51,11 @@ class SyncRoutine:
         self.countdown_to_sync_timer = mw.progress.timer(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT, self.start_sync_timer, False)
 
     def is_bad_state(self):
-        """Check if the app is in any state that it shouldn't automatically sync in to avoid disturbing the user"""
+        """Check if the app is in any state that it shouldn't automatically sync in to avoid interrupting the user's activity"""
         reasons = []
         if self.sync_in_progress:
             reasons.append("Sync in progress")
-        if self.STRICT_BACKGROUND_MODE:
+        if self.STRICTLY_AVOID_INTERRUPTIONS:
             if not aqt_dialogs.allClosed():
                 try:
                     open_windows = [x[0] for x in aqt_dialogs._dialogs.items() if x[1][1]]
@@ -98,7 +91,7 @@ class SyncRoutine:
         self.start_countdown_to_sync_timer()
 
     def on_user_activity(self):
-        self._log("User activity! Stopping sync timer")
+        self._log("User activity! Stopped sync timer")
         self.activity_since_sync = True
         self.stop_sync_timer()
 
@@ -123,16 +116,16 @@ class SyncRoutine:
 
     def sync_initiated(self, *args):
         """Corner case: user initiates sync but it can't finish. Set this parameter to avoid starting another failed sync attempt on top"""
-        if not production:
+        if not log_to_stdout:
             self._log("Sync initiated")
         self.sync_in_progress = True
 
     def load_config(self):
         self.SYNC_TIMEOUT_NO_ACTIVITY = (self.config.get(CONFIG_IDLE_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
         self.SYNC_TIMEOUT = (self.config.get(CONFIG_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
-        self.STRICT_BACKGROUND_MODE = (self.config.get(CONFIG_STRICT_BACKGROUND_MODE))
+        self.STRICTLY_AVOID_INTERRUPTIONS = (self.config.get(CONFIG_STRICTLY_AVOID_INTERRUPTIONS))
 
-        self._log(f"Loaded config. New sync / idle sync timeout: {self.SYNC_TIMEOUT / 60000} minutes, {self.SYNC_TIMEOUT_NO_ACTIVITY / 60000} minutes. Strict background mode {'enabled' if self.STRICT_BACKGROUND_MODE else 'disabled'}")
+        self._log(f"Loaded config. New sync / idle sync timeout: {self.SYNC_TIMEOUT / 60000} minutes, {self.SYNC_TIMEOUT_NO_ACTIVITY / 60000} minutes. Strictly avoid interruptions: {'on' if self.STRICTLY_AVOID_INTERRUPTIONS else 'off'}")
 
     def reload_config(self):
         self.stop_sync_timer()

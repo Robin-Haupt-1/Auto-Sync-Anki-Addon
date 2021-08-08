@@ -115,3 +115,4 @@ dmypy.json
 
 .idea/
 *.txt
+*.py~

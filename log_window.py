@@ -1,7 +1,7 @@
-from aqt.qt import *
-from PyQt5 import QtCore, QtGui
-from aqt.utils import showInfo
+from aqt.qt import QDialog, QGridLayout, QTextEdit
+from PyQt5.QtGui import QCloseEvent
 from .constants import AUTO_SYNC_ICON
+
 
 class LogManager:
     def __init__(self):
@@ -25,7 +25,7 @@ class AutoSyncLogDialog(QDialog):
     def __init__(self, log_manager: LogManager, parent):
         super(AutoSyncLogDialog, self).__init__()
         self.log_manager = log_manager
-        self.parent=parent
+        self.parent = parent
 
         # set up UI
 
@@ -54,6 +54,5 @@ class AutoSyncLogDialog(QDialog):
         sb = self.log_output.verticalScrollBar()
         sb.setValue(sb.maximum())
 
-    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+    def closeEvent(self, a0: QCloseEvent) -> None:
         self.parent.on_log_dialog_close()
-

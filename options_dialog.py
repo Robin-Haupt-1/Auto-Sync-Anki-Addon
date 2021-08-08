@@ -1,13 +1,9 @@
-from aqt.qt import *
 from PyQt5 import QtCore, QtGui
-from aqt.utils import showInfo
-from aqt import QCoreApplication
+from aqt.qt import QDialog, QSpinBox, QLabel, QCheckBox, QGridLayout, QPushButton
 from .sync_routine import SyncRoutine
 from .config import AutoSyncConfigManager
 from .constants import *
-from aqt import mw
 from .log_window import AutoSyncLogDialog, LogManager
-from .constants import AUTO_SYNC_ICON
 
 
 class AutoSyncOptionsDialog(QDialog):
@@ -41,19 +37,20 @@ class AutoSyncOptionsDialog(QDialog):
         self.config.set(CONFIG_IDLE_SYNC_TIMEOUT, f)
         self.sync_routine.reload_config()
 
-    def change_strict_background_mode(self, enabled):
+    def change_strictly_avoid_interruption(self, enabled):
 
-        self.config.set(CONFIG_STRICT_BACKGROUND_MODE, enabled)
+        self.config.set(CONFIG_STRICTLY_AVOID_INTERRUPTIONS, enabled)
         self.sync_routine.reload_config()
 
     def change_strict_background_mode_label_click(self, enabled):
-        self.config.set(CONFIG_STRICT_BACKGROUND_MODE, enabled)
+        self.config.set(CONFIG_STRICTLY_AVOID_INTERRUPTIONS, enabled)
         self.sync_routine.reload_config()
 
     def setup_ui(self):
         self.setWindowIcon(AUTO_SYNC_ICON)
         self.setMaximumWidth(500)
         self.setMaximumHeight(150)
+
         # "Sync after" option
 
         sync_timeout_label = QLabel('Sync after')
@@ -85,21 +82,21 @@ class AutoSyncOptionsDialog(QDialog):
         self.idle_sync_timeout_spinbox.setToolTip('While you are not using Anki, the program will keep syncing in the background (in case you are using Anki on mobile or web and there are changes to sync)')
         self.idle_sync_timeout_spinbox.valueChanged.connect(self.change_idle_sync_timeout)
 
-        # Strict background mode" checkbox
+        # "Strictly avoid interruptions"" checkbox
 
-        strict_background_mode_label = QLabel("Strictly avoid interruptions (recommended)")
-        strict_background_mode_label.setToolTip("Will not auto sync if cards are being reviewed, the card browser or similar windows are open <br>or the main window has focus (isn't minimized or in the background)")
-        strict_background_mode_checkbox = QCheckBox()
-        strict_background_mode_checkbox.setToolTip("Will not auto sync if cards are being reviewed, the card browser or similar windows are open <br>or the main window has focus (isn't minimized or in the background)")
-        strict_background_mode_checkbox.setChecked(self.config.get(CONFIG_STRICT_BACKGROUND_MODE))
-        strict_background_mode_checkbox.stateChanged.connect(self.change_strict_background_mode)
-        strict_background_mode_label.mouseReleaseEvent = lambda *args: strict_background_mode_checkbox.toggle()
+        strictly_avoid_interruptions_label = QLabel("Strictly avoid interruptions (recommended)")
+        strictly_avoid_interruptions_label.setToolTip("Will not auto sync if cards are being reviewed, the card browser or similar windows are open <br>or the main window has focus (isn't minimized or in the background)")
+        strictly_avoid_interruptions_checkbox = QCheckBox()
+        strictly_avoid_interruptions_checkbox.setToolTip("Will not auto sync if cards are being reviewed, the card browser or similar windows are open <br>or the main window has focus (isn't minimized or in the background)")
+        strictly_avoid_interruptions_checkbox.setChecked(self.config.get(CONFIG_STRICTLY_AVOID_INTERRUPTIONS))
+        strictly_avoid_interruptions_checkbox.stateChanged.connect(self.change_strictly_avoid_interruption)
+        strictly_avoid_interruptions_label.mouseReleaseEvent = lambda *args: strictly_avoid_interruptions_checkbox.toggle()
 
         # Show log button
         open_log_button = QPushButton()
 
         open_log_button.setText("Show log ...")
-        open_log_button.clicked.connect(lambda *args: self.on_log_dialog_call(self.log_manager))
+        open_log_button.clicked.connect(lambda *args: self.on_log_dialog_call())
         open_log_button.setMaximumWidth(80)
 
         # Close button
@@ -118,8 +115,8 @@ class AutoSyncOptionsDialog(QDialog):
 
         grid.addWidget(idle_sync_timeout_label, 1, 0)
         grid.addWidget(self.idle_sync_timeout_spinbox, 1, 1)
-        grid.addWidget(strict_background_mode_label, 3, 0)
-        grid.addWidget(strict_background_mode_checkbox, 3, 1)
+        grid.addWidget(strictly_avoid_interruptions_label, 3, 0)
+        grid.addWidget(strictly_avoid_interruptions_checkbox, 3, 1)
 
         # grid.addWidget(empty_label, 4, 0)
 
@@ -130,8 +127,8 @@ class AutoSyncOptionsDialog(QDialog):
 
         self.setWindowTitle('Auto Sync Options')
 
-    def on_log_dialog_call(self, log_manager):
-        if (self.log_dialog_instance):
+    def on_log_dialog_call(self):
+        if self.log_dialog_instance:
             self.log_dialog_instance.raise_()
             return
         dialog = AutoSyncLogDialog(self.log_manager, self)
