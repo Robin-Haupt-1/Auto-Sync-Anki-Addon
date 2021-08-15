@@ -116,3 +116,5 @@ dmypy.json
 .idea/
 *.txt
 *.py~
+Automatic-Sync-Anki-Addon.zip
+meta.json
