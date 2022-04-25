@@ -13,6 +13,7 @@ class AutoSyncOptionsDialog(QDialog):
         self.config = config
         self.sync_routine: SyncRoutine = sync_routine
         self.log_manager = log_manager
+
         self.log_dialog_instance = None
 
         # set up UI elements
@@ -22,12 +23,12 @@ class AutoSyncOptionsDialog(QDialog):
 
         self.setup_ui()
 
-    def change_sync_timeout(self, f):
-        if f == 1:
+    def change_sync_timeout(self, value):
+        if value == 1:
             self.sync_timeout_spinbox.setSuffix(" minute")
         else:
             self.sync_timeout_spinbox.setSuffix(" minutes")
-        self.config.set(CONFIG_SYNC_TIMEOUT, f)
+        self.config.set(CONFIG_SYNC_TIMEOUT, value)
         self.sync_routine.reload_config()
 
     def change_idle_sync_timeout(self, f):
@@ -48,6 +49,7 @@ class AutoSyncOptionsDialog(QDialog):
         self.sync_routine.reload_config()
 
     def setup_ui(self):
+        self.setWindowTitle('Auto Sync Options')
         self.setWindowIcon(AUTO_SYNC_ICON)
         self.setMaximumWidth(500)
         self.setMaximumHeight(150)
@@ -106,8 +108,7 @@ class AutoSyncOptionsDialog(QDialog):
         close_button.setText("Close")
         close_button.clicked.connect(lambda *args: self.close())
 
-        empty_label = QLabel()
-        empty_label.setText("")
+        # Set up layout
 
         grid = QGridLayout()
         grid.setSpacing(10)
@@ -119,23 +120,20 @@ class AutoSyncOptionsDialog(QDialog):
         grid.addWidget(strictly_avoid_interruptions_label, 3, 0)
         grid.addWidget(strictly_avoid_interruptions_checkbox, 3, 1)
 
-        # grid.addWidget(empty_label, 4, 0)
-
         grid.addWidget(open_log_button, 5, 0)
         grid.addWidget(close_button, 5, 1)
 
         self.setLayout(grid)
 
-        self.setWindowTitle('Auto Sync Options')
-
     def on_log_dialog_call(self):
+        """Bring the log window to the foreground if one is open, else open a new one """
         if self.log_dialog_instance:
             self.log_dialog_instance.raise_()
             return
         dialog = AutoSyncLogDialog(self.log_manager, self)
         self.log_dialog_instance = dialog
         dialog.show()
-        dialog.exec_()
+        dialog.exec()
 
     def on_log_dialog_close(self):
         self.log_dialog_instance = None
@@ -146,7 +144,7 @@ class AutoSyncOptionsDialog(QDialog):
 
 
 def on_options_call(conf, sync_routine, log_manager):
-    """Call settings dialog"""
+    """Open settings dialog"""
     dialog = AutoSyncOptionsDialog(conf, sync_routine, log_manager)
     dialog.show()
     dialog.exec_()
