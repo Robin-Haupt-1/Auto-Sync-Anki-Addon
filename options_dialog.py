@@ -59,7 +59,7 @@ class AutoSyncOptionsDialog(QDialog):
         sync_timeout_label = QLabel('Sync after')
         sync_timeout_label.setToolTip('How many minutes after you have last interacted with Anki the program will wait to start the sync')
         self.sync_timeout_spinbox.setAlignment(Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
-        self.sync_timeout_spinbox.setFixedWidth(80)
+        #self.sync_timeout_spinbox.setFixedWidth(110)
         self.sync_timeout_spinbox.setMinimum(1)
 
         self.sync_timeout_spinbox.setValue(self.config.get(CONFIG_SYNC_TIMEOUT))
@@ -76,7 +76,7 @@ class AutoSyncOptionsDialog(QDialog):
         idle_sync_timeout_label.setToolTip('While you are not using Anki, the program will keep syncing in the background (in case you are using Anki on mobile or web and there are changes to sync)')
         self.idle_sync_timeout_spinbox.setMinimum(1)
         self.idle_sync_timeout_spinbox.setAlignment(Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
-        self.idle_sync_timeout_spinbox.setFixedWidth(80)
+        #self.idle_sync_timeout_spinbox.setFixedWidth(110)
         self.idle_sync_timeout_spinbox.setValue(self.config.get(CONFIG_IDLE_SYNC_TIMEOUT))
         if self.idle_sync_timeout_spinbox.value() == 1:
             self.idle_sync_timeout_spinbox.setSuffix(" minute")
@@ -100,7 +100,7 @@ class AutoSyncOptionsDialog(QDialog):
 
         open_log_button.setText("Show log ...")
         open_log_button.clicked.connect(lambda *args: self.on_log_dialog_call())
-        open_log_button.setMaximumWidth(80)
+        open_log_button.setMaximumWidth(100)
 
         # Close button
 
