@@ -57,7 +57,7 @@ class SyncRoutine:
         if self.countdown_to_sync_timer is not None:
             self.countdown_to_sync_timer.stop()
         self.log(f"Waiting {self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 60000} minutes to start sync timer")
-        self.countdown_to_sync_timer = mw.progress.timer(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT, self.start_sync_timer, False)
+        self.countdown_to_sync_timer = mw.progress.timer(int(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT), self.start_sync_timer, False)
 
     def is_good_state(self):
         """Check that the app isn't in any state that it shouldn't automatically sync in to avoid interrupting the user's activity"""
@@ -134,9 +134,10 @@ class SyncRoutine:
         self.sync_in_progress = True
 
     def load_config(self):
-        self.SYNC_TIMEOUT_NO_ACTIVITY = (self.config.get(CONFIG_IDLE_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
-        self.SYNC_TIMEOUT = (self.config.get(CONFIG_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2)
-        self.STRICTLY_AVOID_INTERRUPTIONS = (self.config.get(CONFIG_STRICTLY_AVOID_INTERRUPTIONS))
+        """Load the constants from config manager"""
+        self.SYNC_TIMEOUT_NO_ACTIVITY = int((self.config.get(CONFIG_IDLE_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2))
+        self.SYNC_TIMEOUT = int((self.config.get(CONFIG_SYNC_TIMEOUT) * 1000 * 60) - round(self.COUNTDOWN_TO_SYNC_TIMER_TIMEOUT / 2))
+        self.STRICTLY_AVOID_INTERRUPTIONS = self.config.get(CONFIG_STRICTLY_AVOID_INTERRUPTIONS)
 
         self.log(f"Loaded config. New sync / idle sync timeout: {self.SYNC_TIMEOUT / 60000} minutes, {self.SYNC_TIMEOUT_NO_ACTIVITY / 60000} minutes. Strictly avoid interruptions: {'on' if self.STRICTLY_AVOID_INTERRUPTIONS else 'off'}")
 
