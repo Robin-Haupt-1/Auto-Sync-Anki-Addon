@@ -11,4 +11,4 @@ CONFIG_DEFAULT_CONFIG = {CONFIG_SYNC_TIMEOUT: 1, CONFIG_IDLE_SYNC_TIMEOUT: 10, C
 
 # Layout
 
-AUTO_SYNC_ICON = QApplication.instance().style().standardIcon(QStyle.SP_BrowserReload)
+AUTO_SYNC_ICON = QApplication.instance().style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload)

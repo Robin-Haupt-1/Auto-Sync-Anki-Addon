@@ -1,5 +1,5 @@
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import Qt
+from PyQt6 import QtGui
+from PyQt6.QtCore import Qt
 from aqt.qt import QDialog, QSpinBox, QLabel, QCheckBox, QGridLayout, QPushButton
 from .sync_routine import SyncRoutine
 from .config import AutoSyncConfigManager
@@ -58,7 +58,7 @@ class AutoSyncOptionsDialog(QDialog):
 
         sync_timeout_label = QLabel('Sync after')
         sync_timeout_label.setToolTip('How many minutes after you have last interacted with Anki the program will wait to start the sync')
-        self.sync_timeout_spinbox.setAlignment(Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+        self.sync_timeout_spinbox.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
         #self.sync_timeout_spinbox.setFixedWidth(110)
         self.sync_timeout_spinbox.setMinimum(1)
 
@@ -75,7 +75,7 @@ class AutoSyncOptionsDialog(QDialog):
         idle_sync_timeout_label = QLabel('When the program is idle, sync every')
         idle_sync_timeout_label.setToolTip('While you are not using Anki, the program will keep syncing in the background (in case you are using Anki on mobile or web and there are changes to sync)')
         self.idle_sync_timeout_spinbox.setMinimum(1)
-        self.idle_sync_timeout_spinbox.setAlignment(Qt.AlignRight | Qt.AlignTrailing | Qt.AlignVCenter)
+        self.idle_sync_timeout_spinbox.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTrailing | Qt.AlignmentFlag.AlignVCenter)
         #self.idle_sync_timeout_spinbox.setFixedWidth(110)
         self.idle_sync_timeout_spinbox.setValue(self.config.get(CONFIG_IDLE_SYNC_TIMEOUT))
         if self.idle_sync_timeout_spinbox.value() == 1:
@@ -147,4 +147,4 @@ def on_options_call(conf, sync_routine, log_manager):
     """Open settings dialog"""
     dialog = AutoSyncOptionsDialog(conf, sync_routine, log_manager)
     dialog.show()
-    dialog.exec_()
+    dialog.exec()

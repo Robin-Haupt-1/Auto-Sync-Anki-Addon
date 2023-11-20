@@ -1,5 +1,5 @@
 from aqt.qt import QDialog, QGridLayout, QTextEdit
-from PyQt5.QtGui import QCloseEvent
+from PyQt6.QtGui import QCloseEvent
 from .constants import AUTO_SYNC_ICON
 
 
@@ -33,7 +33,7 @@ class AutoSyncLogDialog(QDialog):
         # set up log TextEdit
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)
-        self.log_output.setLineWrapMode(QTextEdit.NoWrap)
+        self.log_output.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
 
         # Window layout
         grid = QGridLayout()
